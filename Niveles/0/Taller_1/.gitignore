@@ -1,0 +1,68 @@
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribuciones de Python
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Entornos virtuales
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos del modelo entrenado (pueden ser pesados y se regeneran)
+*.pkl
+*.joblib
+*.h5
+*.model
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Archivos de configuración del IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Base de datos temporales
+*.db
+*.sqlite3
+
+# Archivos de prueba temporales
+test_output/
+temp/
+
+# Backups
+backup_*
+
+# Archivos de datos procesados (pueden regenerarse)
+data/processed/*

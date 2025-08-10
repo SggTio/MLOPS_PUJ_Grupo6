@@ -1,0 +1,15 @@
+joblib==1.5.1
+numpy==2.3.2
+palmerpenguins==0.1.4
+pandas==2.3.1
+python-dateutil==2.9.0.post0
+pytz==2025.2
+scikit-learn==1.7.1
+scipy==1.16.1
+setuptools==80.9.0
+six==1.17.0
+threadpoolctl==3.6.0
+tzdata==2025.2
+fastapi==0.115.0
+uvicorn==0.34.0
+pydantic==2.10.3

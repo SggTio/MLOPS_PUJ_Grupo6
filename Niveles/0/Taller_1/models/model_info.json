@@ -1,0 +1,150 @@
+{
+  "model_info": {
+    "algorithm": "LogisticRegression",
+    "library": "scikit-learn",
+    "hyperparameters": {
+      "random_state": 42,
+      "max_iter": 1000,
+      "multi_class": "ovr",
+      "solver": "liblinear"
+    }
+  },
+  "training_config": {
+    "test_size": 0.2,
+    "random_state": 42,
+    "scaling_method": "StandardScaler"
+  },
+  "data_info": {
+    "original_columns": [
+      "species",
+      "island",
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g",
+      "sex",
+      "year"
+    ],
+    "processed_columns": [
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g",
+      "year",
+      "island_Biscoe",
+      "island_Dream",
+      "island_Torgersen",
+      "sex_female",
+      "sex_male"
+    ],
+    "species_mapping": {
+      "Adelie": 1,
+      "Gentoo": 2,
+      "Chinstrap": 3
+    },
+    "num_original_features": 7,
+    "num_processed_features": 10,
+    "encoding_applied": "one_hot"
+  },
+  "feature_info": {
+    "feature_columns": [
+      "bill_length_mm",
+      "bill_depth_mm",
+      "flipper_length_mm",
+      "body_mass_g",
+      "year",
+      "island_Biscoe",
+      "island_Dream",
+      "island_Torgersen",
+      "sex_female",
+      "sex_male"
+    ],
+    "num_features": 10
+  },
+  "performance_metrics": {
+    "accuracy": 0.9850746268656716,
+    "classification_report": {
+      "1": {
+        "precision": 1.0,
+        "recall": 0.9655172413793104,
+        "f1-score": 0.9824561403508771,
+        "support": 29.0
+      },
+      "2": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 24.0
+      },
+      "3": {
+        "precision": 0.9333333333333333,
+        "recall": 1.0,
+        "f1-score": 0.9655172413793104,
+        "support": 14.0
+      },
+      "accuracy": 0.9850746268656716,
+      "macro avg": {
+        "precision": 0.9777777777777779,
+        "recall": 0.9885057471264368,
+        "f1-score": 0.9826577939100626,
+        "support": 67.0
+      },
+      "weighted avg": {
+        "precision": 0.9860696517412935,
+        "recall": 0.9850746268656716,
+        "f1-score": 0.9852010365594893,
+        "support": 67.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        28,
+        0,
+        1
+      ],
+      [
+        0,
+        24,
+        0
+      ],
+      [
+        0,
+        0,
+        14
+      ]
+    ],
+    "prediction_distribution": {
+      "y_test_unique": [
+        29,
+        24,
+        14
+      ],
+      "y_pred_unique": [
+        28,
+        24,
+        15
+      ]
+    },
+    "model_confidence": {
+      "mean_max_probability": 0.9489261779442462,
+      "std_max_probability": 0.078071455641882
+    }
+  },
+  "training_timestamp": "2025-08-10T17:08:19.264088",
+  "model_version": "1.0.0",
+  "storage_info": {
+    "saved_timestamp": "2025-08-10T17:08:19.275432",
+    "model_file": "logistic_regression_model.pkl",
+    "scaler_file": "scaler.pkl",
+    "metadata_file": "model_info.json",
+    "storage_format": "joblib_pkl"
+  },
+  "integrity_info": {
+    "files_count": 3,
+    "expected_files": [
+      "logistic_regression_model.pkl",
+      "scaler.pkl",
+      "model_info.json"
+    ]
+  }
+}

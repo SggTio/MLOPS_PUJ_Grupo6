@@ -1,0 +1,31 @@
+# docker/Dockerfile.jupyter
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:${PATH}"
+
+WORKDIR /workspace
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates gcc g++ \
+ && rm -rf /var/lib/apt/lists/*
+
+# Instalamos uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# copiamos requerimientos e instalamos
+COPY requirements.txt .
+RUN uv pip install --system -r requirements.txt \
+ && uv pip install --system jupyterlab
+
+# creamos folders de uso com[un]
+RUN mkdir -p /workspace/models /workspace/project /workspace/notebooks
+ENV MODELS_DIR=/workspace/models
+
+EXPOSE 8888
+
+# JupyterLab usa ServerApp; sin token
+CMD ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", \
+     "--ServerApp.token="]

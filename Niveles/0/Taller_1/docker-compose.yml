@@ -1,0 +1,37 @@
+services:
+  jupyter:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.jupyter
+    container_name: penguins-jupyter
+    ports:
+      - "8888:8888"
+    environment:
+      - MODELS_DIR=/workspace/models
+    volumes:
+      # your whole project into the notebook workspace
+      - ./:/workspace
+      # shared models volume so API + Jupyter see the same artifacts
+      - model_store:/workspace/models
+    # make it explicit here too (in case CMD changes in the image)
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--ServerApp.token=", "--allow-root"]
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api
+    container_name: penguins-api
+    ports:
+      - "8989:8989"
+    environment:
+      - MODELS_DIR=/app/models
+    volumes:
+      # live code mount for quick edits
+      - ./:/app
+      # same shared models volume
+      - model_store:/app/models
+    depends_on:
+      - jupyter
+
+volumes:
+  model_store:

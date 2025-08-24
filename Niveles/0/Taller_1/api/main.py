@@ -10,6 +10,7 @@ import sys
 import os
 from pathlib import Path
 from contextlib import asynccontextmanager
+from threading import Lock #lo anade santa
 
 # Agregar el directorio padre al path para permitir imports relativos
 sys.path.append(str(Path(__file__).parent.parent))
@@ -53,6 +54,8 @@ cached_model = None
 cached_scaler = None
 cached_metadata = None
 model_load_time = None
+_reload_lock = Lock()  # NUEVO: evita condiciones de carrera al recargar el modelo
+#lo suma santa
 
 
 @asynccontextmanager
@@ -70,8 +73,11 @@ async def lifespan(app: FastAPI):
     
     try:
         # Inicializar el gestor de modelos
-        model_manager = ModelManager(models_dir="models")
-        
+        #model_manager = ModelManager(models_dir="models")
+        # Usar la variable de entorno MODELS_DIR si está definida (por defecto "models")
+        models_dir = os.getenv("MODELS_DIR", "models")
+        model_manager = ModelManager(models_dir=models_dir)
+                
         # Intentar cargar todos los artefactos
         start_time = time.time()
         cached_model, cached_scaler, cached_metadata = model_manager.load_model_artifacts()
@@ -358,6 +364,62 @@ async def get_model_info(
         logger.error(f"[{request_id}] Error obteniendo información del modelo: {e}")
         raise HTTPException(status_code=500, detail="Error obteniendo información del modelo")
 
+#--------- lo suma santa ----------
+@app.post("/model/reload", response_model=ModelInfoResponse)
+async def reload_model(
+    request_id: str = Depends(log_request_info)
+):
+    """
+    Recargar artefactos del modelo desde MODELS_DIR sin reiniciar el servicio.
+    
+    Útil cuando un nuevo modelo ha sido guardado (por ejemplo, desde Jupyter)
+    en el volumen compartido. Este endpoint vuelve a cargar el modelo, scaler
+    y metadata, y retorna la información del modelo recién cargado.
+    """
+    global cached_model, cached_scaler, cached_metadata, model_load_time, model_manager
+
+    try:
+        with _reload_lock:
+            # Asegurar que usamos el mismo directorio de modelos que el resto del servicio
+            models_dir = os.getenv("MODELS_DIR", "models")
+            if model_manager is None:
+                model_manager = ModelManager(models_dir=models_dir)
+
+            # Volver a cargar artefactos
+            new_model, new_scaler, new_metadata = model_manager.load_model_artifacts()
+
+            # Actualizar caches atómicamente
+            cached_model = new_model
+            cached_scaler = new_scaler
+            cached_metadata = new_metadata
+            model_load_time = datetime.now().isoformat()
+
+        # Preparar respuesta consistente con /model/info
+        model_info = cached_metadata.get("model_info", {})
+        performance = cached_metadata.get("performance_metrics", {})
+        feature_info = cached_metadata.get("feature_info", {})
+        data_info = cached_metadata.get("data_info", {})
+
+        logger.info(f"[{request_id}] Modelo recargado exitosamente desde {models_dir}")
+
+        return ModelInfoResponse(
+            model_type=model_info.get("algorithm", "unknown"),
+            version=cached_metadata.get("model_version", "unknown"),
+            training_date=cached_metadata.get("training_timestamp", "unknown"),
+            accuracy=performance.get("accuracy", 0.0),
+            feature_count=feature_info.get("num_features", 0),
+            target_classes=fix_target_classes_for_api(data_info.get("species_mapping", {})),
+            features=feature_info.get("feature_columns", [])
+        )
+
+    except FileNotFoundError:
+        logger.warning(f"[{request_id}] No se encontraron artefactos en MODELS_DIR")
+        raise HTTPException(status_code=404, detail="Artefactos del modelo no encontrados en MODELS_DIR")
+    except Exception as e:
+        logger.error(f"[{request_id}] Error recargando modelo: {e}")
+        raise HTTPException(status_code=500, detail="Error recargando artefactos del modelo")
+    
+#---------- cierre de lo nuevo de santa ----------
 
 @app.post("/predict/simple", response_model=PredictionResponse)
 async def predict_species_simple(

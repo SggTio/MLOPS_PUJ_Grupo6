@@ -1,0 +1,35 @@
+# docker/Dockerfile.api
+FROM python:3.11-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/root/.local/bin:${PATH}"
+
+WORKDIR /app
+
+# Dependencias del sistema
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl ca-certificates gcc g++ \
+ && rm -rf /var/lib/apt/lists/*
+
+# Instalamos uv
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# vamos a copiar los requirements.txt para cachear
+COPY requirements.txt .
+
+# usamos las dependencias para instalarlas via uv
+RUN uv pip install --system -r requirements.txt
+
+# Copiamos proyecto
+COPY . /app
+
+# nos aseguramos que models dir existe y el contenedor
+RUN mkdir -p /app/models
+ENV MODELS_DIR=/app/models
+
+EXPOSE 8989
+
+# Comando pensado en Dev
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8989", "--reload"]

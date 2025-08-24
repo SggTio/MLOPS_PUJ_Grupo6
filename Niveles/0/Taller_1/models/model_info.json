@@ -130,10 +130,10 @@
       "std_max_probability": 0.078071455641882
     }
   },
-  "training_timestamp": "2025-08-10T17:08:19.264088",
+  "training_timestamp": "2025-08-23T18:20:39.887250",
   "model_version": "1.0.0",
   "storage_info": {
-    "saved_timestamp": "2025-08-10T17:08:19.275432",
+    "saved_timestamp": "2025-08-23T18:20:39.888753",
     "model_file": "logistic_regression_model.pkl",
     "scaler_file": "scaler.pkl",
     "metadata_file": "model_info.json",

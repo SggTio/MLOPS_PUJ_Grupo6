@@ -261,6 +261,169 @@ class ModelInfoResponse(BaseModel):
     features: List[str] = Field(..., description="Lista de características que espera el modelo")
 
 
+class ModelListItem(BaseModel):
+    """Esquema para un elemento en la lista de modelos."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "name": "random_forest",
+                "algorithm": "RandomForestClassifier",
+                "is_active": True,
+                "is_best": False,
+                "test_accuracy": 0.9750,
+                "cv_accuracy": 0.9680,
+                "training_time": 2.45,
+                "file_size_kb": 125.7,
+                "saved_timestamp": "2024-01-15T10:30:00Z"
+            }
+        }
+    )
+    
+    name: str = Field(..., description="Nombre del modelo")
+    algorithm: str = Field(..., description="Algoritmo utilizado")
+    is_active: bool = Field(..., description="Si es el modelo actualmente activo")
+    is_best: bool = Field(..., description="Si es el modelo con mejor performance")
+    test_accuracy: float = Field(..., description="Accuracy en datos de test")
+    cv_accuracy: float = Field(..., description="Accuracy de validación cruzada")
+    training_time: float = Field(..., description="Tiempo de entrenamiento en segundos")
+    file_size_kb: float = Field(..., description="Tamaño del archivo en KB")
+    saved_timestamp: str = Field(..., description="Timestamp cuando se guardó")
+
+
+class ModelsListResponse(BaseModel):
+    """Esquema para la respuesta de lista de modelos."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "total_models": 5,
+                "active_model": "random_forest",
+                "best_model": "gradient_boosting",
+                "models": [
+                    {
+                        "name": "gradient_boosting",
+                        "algorithm": "GradientBoostingClassifier",
+                        "is_active": False,
+                        "is_best": True,
+                        "test_accuracy": 0.9851,
+                        "cv_accuracy": 0.9720,
+                        "training_time": 8.32,
+                        "file_size_kb": 234.5,
+                        "saved_timestamp": "2024-01-15T10:30:00Z"
+                    }
+                ],
+                "last_updated": "2024-01-15T10:30:00Z"
+            }
+        }
+    )
+    
+    total_models: int = Field(..., description="Número total de modelos disponibles")
+    active_model: Optional[str] = Field(None, description="Nombre del modelo activo")
+    best_model: Optional[str] = Field(None, description="Nombre del modelo con mejor performance")
+    models: List[ModelListItem] = Field(..., description="Lista de modelos disponibles")
+    last_updated: str = Field(..., description="Timestamp de última actualización")
+
+
+class ModelActivationResponse(BaseModel):
+    """Esquema para la respuesta de activación de modelo."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "success": True,
+                "message": "Modelo 'random_forest' activado exitosamente",
+                "previous_active": "logistic_regression",
+                "new_active": "random_forest",
+                "model_info": {
+                    "algorithm": "RandomForestClassifier",
+                    "test_accuracy": 0.9750,
+                    "training_date": "2024-01-15T10:30:00Z"
+                }
+            }
+        }
+    )
+    
+    success: bool = Field(..., description="Si la activación fue exitosa")
+    message: str = Field(..., description="Mensaje descriptivo del resultado")
+    previous_active: Optional[str] = Field(None, description="Modelo activo anterior")
+    new_active: str = Field(..., description="Nuevo modelo activo")
+    model_info: Dict[str, Any] = Field(..., description="Información del modelo activado")
+
+
+class ModelComparisonResponse(BaseModel):
+    """Esquema para la respuesta de comparación de modelos."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "experiment_info": {
+                    "total_models_trained": 5,
+                    "best_model": "gradient_boosting",
+                    "timestamp": "2024-01-15T10:30:00Z",
+                    "cv_folds": 5,
+                    "test_size": 0.2
+                },
+                "ranking": [
+                    {"rank": 1, "model": "gradient_boosting", "accuracy": 0.9851},
+                    {"rank": 2, "model": "random_forest", "accuracy": 0.9750}
+                ],
+                "models_summary": {}
+            }
+        }
+    )
+    
+    experiment_info: Dict[str, Any] = Field(..., description="Información del experimento")
+    ranking: List[Dict[str, Any]] = Field(..., description="Ranking de modelos por performance")
+    models_summary: Dict[str, Any] = Field(..., description="Resumen de cada modelo")
+    detailed_metrics: Optional[Dict[str, Any]] = Field(None, description="Métricas detalladas de cada modelo")
+
+
+class ModelDeletionResponse(BaseModel):
+    """Esquema para la respuesta de eliminación de modelo."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "success": True,
+                "message": "Modelo 'old_model' eliminado exitosamente",
+                "deleted_model": "old_model",
+                "remaining_models": 4,
+                "new_active": "random_forest"
+            }
+        }
+    )
+    
+    success: bool = Field(..., description="Si la eliminación fue exitosa")
+    message: str = Field(..., description="Mensaje descriptivo del resultado")
+    deleted_model: str = Field(..., description="Nombre del modelo eliminado")
+    remaining_models: int = Field(..., description="Número de modelos restantes")
+    new_active: Optional[str] = Field(None, description="Nuevo modelo activo si cambió")
+
+
+class MultiModelTrainingRequest(BaseModel):
+    """Esquema para solicitud de entrenamiento multi-modelo."""
+    
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "algorithms": ["logistic_regression", "random_forest", "svm_rbf"],
+                "cv_folds": 5,
+                "test_size": 0.2,
+                "auto_activate_best": True
+            }
+        }
+    )
+    
+    algorithms: Optional[List[str]] = Field(
+        None, 
+        description="Lista de algoritmos a entrenar. Si es None, entrena todos los disponibles"
+    )
+    cv_folds: int = Field(5, ge=2, le=10, description="Número de folds para validación cruzada")
+    test_size: float = Field(0.2, gt=0.0, lt=1.0, description="Proporción de datos para testing")
+    auto_activate_best: bool = Field(True, description="Activar automáticamente el mejor modelo")
+
+
 class ErrorResponse(BaseModel):
     """Esquema estándar para respuestas de error."""
     

@@ -1,0 +1,6 @@
+pandas
+scikit-learn
+SQLAlchemy
+pymysql
+palmerpenguins
+joblib

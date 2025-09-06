@@ -1,0 +1,123 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  mysql_data:
+    image: mysql:8
+    # tip for Apple Silicon if you hit issues:
+    # platform: linux/amd64
+    # command: ["--default-authentication-plugin=mysql_native_password","--sql-mode="]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: penguins_db
+      MYSQL_USER: penguin
+      MYSQL_PASSWORD: penguin
+    ports:
+      - "3306:3306"  # optional for host debugging
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ppenguin -u penguin || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  airflow-init:
+    build:
+      context: ./airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DATA_DB_URI: mysql+pymysql://penguin:penguin@mysql_data:3306/penguins_db
+    user: "50000:0"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - artifacts:/opt/airflow/artifacts
+    command: ["/bin/bash","-lc",
+      "airflow db init && \
+       airflow users create --role Admin --username airflow --password airflow \
+       --firstname a --lastname b --email admin@example.com"]
+
+  airflow-webserver:
+    build:
+      context: ./airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+      mysql_data:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DATA_DB_URI: mysql+pymysql://penguin:penguin@mysql_data:3306/penguins_db
+    user: "50000:0"
+    ports:
+      - "8080:8080"
+    command: "webserver"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - artifacts:/opt/airflow/artifacts
+
+  airflow-scheduler:
+    build:
+      context: ./airflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+      airflow-init:
+        condition: service_completed_successfully
+      mysql_data:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      DATA_DB_URI: mysql+pymysql://penguin:penguin@mysql_data:3306/penguins_db
+    user: "50000:0"
+    command: "scheduler"
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - airflow_logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - artifacts:/opt/airflow/artifacts
+
+  api:
+    build: ./api
+    depends_on:
+      airflow-scheduler:
+        condition: service_started
+    environment:
+      ARTIFACTS_DIR: /app/artifacts
+    volumes:
+      - artifacts:/app/artifacts
+    ports:
+      - "8000:8000"
+
+volumes:
+  postgres_data:
+  mysql_data:
+  airflow_logs:
+  artifacts:

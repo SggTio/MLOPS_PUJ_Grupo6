@@ -12,7 +12,7 @@ Expone el modelo mediante una API en FastAPI para realizar inferencias.
 Todos los servicios (bases de datos, Airflow, y API) se ejecutan en contenedores Docker bajo un mismo docker-compose.yml.
 
 ### Estructura de Archivos
-![Estructura de archivos del proyecto](./images/arquitectura.png)
+![Estructura de archivos del proyecto](./images/archivos.png)
 
 ## 2. Requisitos previos
 Antes de comenzar, nos aseguramos de tener instalado:

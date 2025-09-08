@@ -1,16 +1,17 @@
 """
-API principal para el servicio de clasificación de pingüinos Palmer.
+API principal para el servicio de clasificación de pingüinos Palmer - SISTEMA MULTI-MODELO.
 
 Este módulo orquesta todos los componentes del sistema ML (procesamiento, modelos, predicción)
-en una interfaz REST coherente. Implementa patrones de diseño robustos para manejo de errores,
-logging, y observabilidad que son esenciales en sistemas de ML en producción.
+en una interfaz REST coherente con capacidad de múltiples algoritmos. Implementa patrones de 
+diseño robustos para manejo de errores, logging, selección dinámica de modelos y observabilidad 
+que son esenciales en sistemas de ML en producción.
 """
 
 import sys
 import os
 from pathlib import Path
 from contextlib import asynccontextmanager
-from threading import Lock #lo anade santa
+from threading import Lock
 
 # Agregar el directorio padre al path para permitir imports relativos
 sys.path.append(str(Path(__file__).parent.parent))
@@ -27,13 +28,20 @@ from typing import Optional
 import uuid
 
 # Imports de nuestros módulos personalizados
-from src.model_manager import ModelManager
+from src.model_manager import MultiModelManager
+from src.multi_model_trainer import train_multiple_algorithms
+from src.data_processing import process_penguins_data
 from api.schemas import (
     PenguinFeaturesSimple, 
     PenguinFeaturesComplete, 
     PredictionResponse,
     HealthResponse,
     ModelInfoResponse,
+    ModelsListResponse,
+    ModelActivationResponse,
+    ModelComparisonResponse,
+    ModelDeletionResponse,
+    MultiModelTrainingRequest,
     ErrorResponse
 )
 
@@ -49,13 +57,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Variables globales para gestión de estado del modelo
-model_manager: Optional[ModelManager] = None
+model_manager: Optional[MultiModelManager] = None
 cached_model = None
 cached_scaler = None
 cached_metadata = None
 model_load_time = None
-_reload_lock = Lock()  # NUEVO: evita condiciones de carrera al recargar el modelo
-#lo suma santa
+_reload_lock = Lock()  # Evita condiciones de carrera al recargar el modelo
 
 
 @asynccontextmanager
@@ -72,21 +79,19 @@ async def lifespan(app: FastAPI):
     logger.info("=== Iniciando carga de artefactos del modelo ===")
     
     try:
-        # Inicializar el gestor de modelos
-        #model_manager = ModelManager(models_dir="models")
-        # Usar la variable de entorno MODELS_DIR si está definida (por defecto "models")
+        # Inicializar el gestor de modelos multi-modelo
         models_dir = os.getenv("MODELS_DIR", "models")
-        model_manager = ModelManager(models_dir=models_dir)
+        model_manager = MultiModelManager(models_dir=models_dir)
                 
-        # Intentar cargar todos los artefactos
+        # Intentar cargar todos los artefactos del modelo activo
         start_time = time.time()
-        cached_model, cached_scaler, cached_metadata = model_manager.load_model_artifacts()
+        cached_model, cached_scaler, cached_metadata = model_manager.load_active_model()
         load_duration = time.time() - start_time
         model_load_time = datetime.now().isoformat()
         
         logger.info(f"Artefactos cargados exitosamente en {load_duration:.2f} segundos")
-        logger.info(f"Modelo: {cached_metadata.get('model_info', {}).get('algorithm', 'unknown')}")
-        logger.info(f"Accuracy: {cached_metadata.get('performance_metrics', {}).get('accuracy', 'unknown')}")
+        logger.info(f"Modelo activo: {model_manager.get_active_model_name()}")
+        logger.info(f"Accuracy: {cached_metadata.get('accuracy', {}).get('test', 'unknown')}")
         
     except FileNotFoundError as e:
         logger.error(f"Artefactos del modelo no encontrados: {e}")
@@ -104,19 +109,22 @@ async def lifespan(app: FastAPI):
 
 # Inicializar la aplicación FastAPI con el nuevo lifespan manager
 app = FastAPI(
-    title="Palmer Penguins Species Classifier API",
+    title="Palmer Penguins Multi-Model Classifier API",
     description="""
-    API RESTful para clasificación de especies de pingüinos usando el dataset Palmer Penguins.
+    API RESTful para clasificación de especies de pingüinos usando múltiples algoritmos de ML.
     
-    Este servicio proporciona endpoints para:
-    - Predicción de especies basada en características físicas
-    - Verificación de salud del servicio
-    - Información detallada sobre el modelo cargado
+    🎯 **Características principales:**
+    - **Múltiples algoritmos**: Logistic Regression, Random Forest, Gradient Boosting, SVM, Neural Network
+    - **Selección dinámica**: Cambio de modelo activo sin reiniciar el servicio
+    - **Comparación automática**: Métricas y rankings de todos los modelos entrenados
+    - **Entrenamiento on-demand**: Re-entrenamiento de algoritmos via API
+    - **A/B Testing**: Soporte nativo para experimentación con modelos
     
-    El modelo utiliza regresión logística entrenada en datos de pingüinos de las islas
-    Palmer en Antarctica, clasificando entre especies Adelie, Chinstrap, y Gentoo.
+    🐧 **Dataset**: Palmer Penguins - Clasificación entre especies Adelie, Chinstrap, y Gentoo
+    
+    🚀 **MLOps Ready**: Versionado, logging, monitoring y gestión completa del ciclo de vida
     """,
-    version="1.0.0",
+    version="2.0.0",
     contact={
         "name": "MLOps Team",
         "email": "mlops@university.edu"
@@ -290,17 +298,36 @@ async def root(request_id: str = Depends(log_request_info)):
     Este endpoint actúa como "health check" básico y punto de entrada
     para desarrolladores explorando el API.
     """
+    # Obtener información del modelo activo
+    active_model_name = model_manager.get_active_model_name() if model_manager else None
+    
     return {
-        "service": "Palmer Penguins Species Classifier",
-        "version": "1.0.0",
+        "service": "Palmer Penguins Multi-Model Classifier",
+        "version": "2.0.0",
         "status": "active",
         "model_loaded": cached_model is not None,
+        "active_model": active_model_name,
         "model_load_time": model_load_time,
+        "features": {
+            "multi_model_support": True,
+            "dynamic_model_switching": True,
+            "auto_comparison": True,
+            "on_demand_training": True
+        },
         "endpoints": {
+            # Endpoints básicos
             "/predict/simple": "Predicción con entrada user-friendly",
             "/predict/complete": "Predicción con one-hot encoding explícito",
             "/health": "Estado detallado del servicio",
-            "/model/info": "Información sobre el modelo cargado",
+            "/model/info": "Información sobre el modelo activo",
+            "/model/reload": "Recargar modelo activo",
+            # Endpoints multi-modelo
+            "/models/list": "Listar todos los modelos disponibles",
+            "/models/activate/{model_name}": "Activar un modelo específico",
+            "/models/comparison": "Comparación detallada entre modelos",
+            "/models/train": "Entrenar múltiples modelos",
+            "/models/{model_name}": "Eliminar un modelo específico",
+            # Documentación
             "/docs": "Documentación interactiva (Swagger UI)",
             "/redoc": "Documentación alternativa (ReDoc)"
         },
@@ -328,7 +355,7 @@ async def health_check(request_id: str = Depends(log_request_info)):
         model_loaded=model_available,
         scaler_loaded=scaler_available,
         timestamp=datetime.now().isoformat(),
-        version="1.0.0"
+        version="2.0.0"
     )
 
 
@@ -338,43 +365,44 @@ async def get_model_info(
     _: None = Depends(validate_model_availability)
 ):
     """
-    Obtener información detallada sobre el modelo cargado.
+    Obtener información detallada sobre el modelo actualmente activo.
     
     Este endpoint es crucial para debugging, auditing, y verificación
     de que el modelo correcto está siendo usado en producción.
     """
     try:
-        # Extraer información del metadata cacheado
-        model_info = cached_metadata.get("model_info", {})
-        performance = cached_metadata.get("performance_metrics", {})
-        feature_info = cached_metadata.get("feature_info", {})
-        data_info = cached_metadata.get("data_info", {})
+        # Extraer información del metadata cacheado (formato multi-modelo)
+        model_config = cached_metadata.get("config", {})
+        accuracy_info = cached_metadata.get("accuracy", {})
+        
+        # Obtener información del modelo activo
+        active_model_name = model_manager.get_active_model_name()
         
         return ModelInfoResponse(
-            model_type=model_info.get("algorithm", "unknown"),
-            version=cached_metadata.get("model_version", "unknown"),
-            training_date=cached_metadata.get("training_timestamp", "unknown"),
-            accuracy=performance.get("accuracy", 0.0),
-            feature_count=feature_info.get("num_features", 0),
-            target_classes=fix_target_classes_for_api(data_info.get("species_mapping", {})),
-            features=feature_info.get("feature_columns", [])
+            model_type=model_config.get("algorithm", "unknown"),
+            version=cached_metadata.get("model_info", {}).get("saved_timestamp", "unknown"),
+            training_date=cached_metadata.get("model_info", {}).get("saved_timestamp", "unknown"),
+            accuracy=accuracy_info.get("test", 0.0),
+            feature_count=len(cached_metadata.get("feature_columns", [])),
+            target_classes={"1": "Adelie", "2": "Chinstrap", "3": "Gentoo"},  # Hardcoded por compatibilidad
+            features=cached_metadata.get("feature_columns", [])
         )
         
     except Exception as e:
         logger.error(f"[{request_id}] Error obteniendo información del modelo: {e}")
         raise HTTPException(status_code=500, detail="Error obteniendo información del modelo")
 
-#--------- lo suma santa ----------
+
 @app.post("/model/reload", response_model=ModelInfoResponse)
 async def reload_model(
     request_id: str = Depends(log_request_info)
 ):
     """
-    Recargar artefactos del modelo desde MODELS_DIR sin reiniciar el servicio.
+    Recargar artefactos del modelo activo desde MODELS_DIR sin reiniciar el servicio.
     
     Útil cuando un nuevo modelo ha sido guardado (por ejemplo, desde Jupyter)
-    en el volumen compartido. Este endpoint vuelve a cargar el modelo, scaler
-    y metadata, y retorna la información del modelo recién cargado.
+    en el volumen compartido. Este endpoint vuelve a cargar el modelo activo,
+    scaler y metadata, y retorna la información del modelo recién cargado.
     """
     global cached_model, cached_scaler, cached_metadata, model_load_time, model_manager
 
@@ -383,10 +411,10 @@ async def reload_model(
             # Asegurar que usamos el mismo directorio de modelos que el resto del servicio
             models_dir = os.getenv("MODELS_DIR", "models")
             if model_manager is None:
-                model_manager = ModelManager(models_dir=models_dir)
+                model_manager = MultiModelManager(models_dir=models_dir)
 
-            # Volver a cargar artefactos
-            new_model, new_scaler, new_metadata = model_manager.load_model_artifacts()
+            # Volver a cargar artefactos del modelo activo
+            new_model, new_scaler, new_metadata = model_manager.load_active_model()
 
             # Actualizar caches atómicamente
             cached_model = new_model
@@ -395,21 +423,21 @@ async def reload_model(
             model_load_time = datetime.now().isoformat()
 
         # Preparar respuesta consistente con /model/info
-        model_info = cached_metadata.get("model_info", {})
-        performance = cached_metadata.get("performance_metrics", {})
-        feature_info = cached_metadata.get("feature_info", {})
-        data_info = cached_metadata.get("data_info", {})
+        model_info = new_metadata.get("config", {})
+        performance = new_metadata.get("accuracy", {})
+        
+        active_model_name = model_manager.get_active_model_name()
 
-        logger.info(f"[{request_id}] Modelo recargado exitosamente desde {models_dir}")
+        logger.info(f"[{request_id}] Modelo {active_model_name} recargado exitosamente desde {models_dir}")
 
         return ModelInfoResponse(
             model_type=model_info.get("algorithm", "unknown"),
-            version=cached_metadata.get("model_version", "unknown"),
-            training_date=cached_metadata.get("training_timestamp", "unknown"),
-            accuracy=performance.get("accuracy", 0.0),
-            feature_count=feature_info.get("num_features", 0),
-            target_classes=fix_target_classes_for_api(data_info.get("species_mapping", {})),
-            features=feature_info.get("feature_columns", [])
+            version=new_metadata.get("model_info", {}).get("saved_timestamp", "unknown"),
+            training_date=new_metadata.get("model_info", {}).get("saved_timestamp", "unknown"),
+            accuracy=performance.get("test", 0.0),
+            feature_count=len(new_metadata.get("feature_columns", [])),
+            target_classes={"1": "Adelie", "2": "Chinstrap", "3": "Gentoo"},  # Hardcoded por compatibilidad
+            features=new_metadata.get("feature_columns", [])
         )
 
     except FileNotFoundError:
@@ -418,8 +446,284 @@ async def reload_model(
     except Exception as e:
         logger.error(f"[{request_id}] Error recargando modelo: {e}")
         raise HTTPException(status_code=500, detail="Error recargando artefactos del modelo")
+
+
+# ========== ENDPOINTS MULTI-MODELO ==========
+
+@app.get("/models/list", response_model=ModelsListResponse)
+async def list_available_models(request_id: str = Depends(log_request_info)):
+    """
+    Listar todos los modelos disponibles con sus métricas y estado.
     
-#---------- cierre de lo nuevo de santa ----------
+    Este endpoint proporciona una vista completa de todos los modelos entrenados,
+    sus métricas de performance, estado de activación, y metadatos relevantes.
+    """
+    try:
+        models_list = model_manager.list_available_models()
+        
+        if "error" in models_list:
+            raise HTTPException(status_code=500, detail=f"Error listando modelos: {models_list['error']}")
+        
+        logger.info(f"[{request_id}] Lista de modelos obtenida: {models_list['total_models']} modelos")
+        
+        return ModelsListResponse(**models_list)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Error listando modelos: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo lista de modelos")
+
+
+@app.post("/models/activate/{model_name}", response_model=ModelActivationResponse)
+async def activate_model(
+    model_name: str,
+    request_id: str = Depends(log_request_info)
+):
+    """
+    Activar un modelo específico para uso en predicciones.
+    
+    Este endpoint permite cambiar dinámicamente qué modelo se usa para predicciones
+    sin reiniciar el servicio. Útil para A/B testing y experimentación en producción.
+    """
+    global cached_model, cached_scaler, cached_metadata
+    
+    try:
+        # Obtener modelo activo actual
+        previous_active = model_manager.get_active_model_name()
+        
+        # Establecer nuevo modelo activo
+        success = model_manager.set_active_model(model_name)
+        
+        if not success:
+            raise HTTPException(status_code=404, detail=f"Modelo '{model_name}' no encontrado")
+        
+        # Cargar el nuevo modelo en cache
+        with _reload_lock:
+            try:
+                new_model, new_scaler, new_metadata = model_manager.load_active_model()
+                cached_model = new_model
+                cached_scaler = new_scaler  
+                cached_metadata = new_metadata
+                
+                logger.info(f"[{request_id}] Modelo activado y cargado: {model_name}")
+                
+            except Exception as e:
+                # Si falló la carga, revertir el cambio
+                if previous_active:
+                    model_manager.set_active_model(previous_active)
+                raise HTTPException(status_code=500, detail=f"Error cargando modelo {model_name}: {str(e)}")
+        
+        # Preparar información del modelo activado
+        model_info = {
+            "algorithm": new_metadata.get("config", {}).get("algorithm", "unknown"),
+            "test_accuracy": new_metadata.get("accuracy", {}).get("test", 0.0),
+            "training_date": new_metadata.get("model_info", {}).get("saved_timestamp", "unknown")
+        }
+        
+        return ModelActivationResponse(
+            success=True,
+            message=f"Modelo '{model_name}' activado exitosamente",
+            previous_active=previous_active,
+            new_active=model_name,
+            model_info=model_info
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Error activando modelo {model_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error activando modelo: {str(e)}")
+
+
+@app.get("/models/comparison", response_model=ModelComparisonResponse)
+async def get_models_comparison(request_id: str = Depends(log_request_info)):
+    """
+    Obtener comparación detallada entre todos los modelos entrenados.
+    
+    Este endpoint proporciona métricas comparativas, rankings, y análisis detallado
+    de performance de todos los modelos disponibles. Útil para análisis de modelos
+    y toma de decisiones sobre qué modelo usar en producción.
+    """
+    try:
+        comparison = model_manager.get_models_comparison()
+        
+        if "error" in comparison:
+            raise HTTPException(status_code=500, detail=f"Error obteniendo comparación: {comparison['error']}")
+        
+        logger.info(f"[{request_id}] Comparación de modelos obtenida")
+        
+        return ModelComparisonResponse(**comparison)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Error obteniendo comparación: {e}")
+        raise HTTPException(status_code=500, detail="Error obteniendo comparación de modelos")
+
+
+@app.delete("/models/{model_name}", response_model=ModelDeletionResponse)
+async def delete_model(
+    model_name: str,
+    request_id: str = Depends(log_request_info)
+):
+    """
+    Eliminar un modelo específico del sistema.
+    
+    Este endpoint permite limpiar modelos obsoletos o experimentales.
+    Si se elimina el modelo activo, automáticamente se activará el mejor modelo disponible.
+    """
+    global cached_model, cached_scaler, cached_metadata
+    
+    try:
+        # Verificar que el modelo existe
+        models_list = model_manager.list_available_models()
+        if model_name not in [m["name"] for m in models_list.get("models", [])]:
+            raise HTTPException(status_code=404, detail=f"Modelo '{model_name}' no encontrado")
+        
+        # Verificar que no sea el único modelo
+        if models_list.get("total_models", 0) <= 1:
+            raise HTTPException(status_code=400, detail="No se puede eliminar el único modelo disponible")
+        
+        # Verificar si es el modelo activo
+        active_model = model_manager.get_active_model_name()
+        was_active = (model_name == active_model)
+        
+        # Eliminar modelo
+        success = model_manager.delete_model(model_name)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Error eliminando modelo '{model_name}'")
+        
+        # Si era el modelo activo, activar el mejor disponible
+        new_active = None
+        if was_active:
+            try:
+                # Obtener lista actualizada
+                updated_list = model_manager.list_available_models()
+                if updated_list.get("models"):
+                    # Activar el mejor modelo disponible
+                    best_available = max(updated_list["models"], key=lambda x: x["test_accuracy"])
+                    model_manager.set_active_model(best_available["name"])
+                    new_active = best_available["name"]
+                    
+                    # Recargar en cache
+                    with _reload_lock:
+                        cached_model, cached_scaler, cached_metadata = model_manager.load_active_model()
+                    
+                    logger.info(f"[{request_id}] Nuevo modelo activo: {new_active}")
+                    
+            except Exception as e:
+                logger.error(f"[{request_id}] Error activando nuevo modelo después de eliminación: {e}")
+        
+        # Obtener recuento actualizado
+        updated_list = model_manager.list_available_models()
+        remaining_count = updated_list.get("total_models", 0)
+        
+        logger.info(f"[{request_id}] Modelo {model_name} eliminado. Restantes: {remaining_count}")
+        
+        return ModelDeletionResponse(
+            success=True,
+            message=f"Modelo '{model_name}' eliminado exitosamente",
+            deleted_model=model_name,
+            remaining_models=remaining_count,
+            new_active=new_active
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Error eliminando modelo {model_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error eliminando modelo: {str(e)}")
+
+
+@app.post("/models/train", response_model=ModelComparisonResponse)
+async def train_multiple_models(
+    training_request: MultiModelTrainingRequest,
+    request_id: str = Depends(log_request_info)
+):
+    """
+    Entrenar múltiples algoritmos simultáneamente y compararlos.
+    
+    Este endpoint ejecuta el pipeline completo de entrenamiento multi-modelo:
+    1. Procesa los datos Palmer Penguins
+    2. Entrena los algoritmos especificados (o todos si no se especifica)
+    3. Evalúa y compara todos los modelos
+    4. Guarda todos los artefactos
+    5. Opcionalmente activa el mejor modelo
+    
+    Útil para experimentación con nuevos algoritmos y re-entrenamiento periódico.
+    """
+    global cached_model, cached_scaler, cached_metadata
+    
+    try:
+        logger.info(f"[{request_id}] Iniciando entrenamiento multi-modelo...")
+        
+        # Procesar datos
+        logger.info(f"[{request_id}] Procesando datos...")
+        X, y, processing_info = process_penguins_data()
+        
+        # Configurar entrenador
+        from src.multi_model_trainer import MultiModelTrainer
+        trainer = MultiModelTrainer(
+            test_size=training_request.test_size,
+            cv_folds=training_request.cv_folds
+        )
+        
+        # Si se especificaron algoritmos específicos, filtrar
+        if training_request.algorithms:
+            available_algorithms = list(trainer.model_configs.keys())
+            invalid_algorithms = set(training_request.algorithms) - set(available_algorithms)
+            
+            if invalid_algorithms:
+                raise HTTPException(
+                    status_code=400, 
+                    detail=f"Algoritmos no válidos: {list(invalid_algorithms)}. Disponibles: {available_algorithms}"
+                )
+            
+            # Filtrar configuraciones
+            trainer.model_configs = {name: config for name, config in trainer.model_configs.items() 
+                                   if name in training_request.algorithms}
+        
+        # Entrenar modelos
+        logger.info(f"[{request_id}] Entrenando {len(trainer.model_configs)} algoritmos...")
+        comparison_results = trainer.train_all_models(X, y)
+        
+        # Guardar todos los modelos
+        logger.info(f"[{request_id}] Guardando artefactos...")
+        models_dir = os.getenv("MODELS_DIR", "models")
+        model_manager_temp = MultiModelManager(models_dir)
+        
+        save_result = model_manager_temp.save_multiple_models(
+            trainer.trained_models, 
+            trainer.scaler, 
+            comparison_results
+        )
+        
+        # Activar el mejor modelo si se solicita
+        if training_request.auto_activate_best:
+            best_model = comparison_results.get("experiment_info", {}).get("best_model")
+            if best_model:
+                logger.info(f"[{request_id}] Activando mejor modelo: {best_model}")
+                model_manager_temp.set_active_model(best_model)
+                
+                # Cargar en cache
+                with _reload_lock:
+                    cached_model, cached_scaler, cached_metadata = model_manager_temp.load_active_model()
+        
+        logger.info(f"[{request_id}] Entrenamiento multi-modelo completado exitosamente")
+        logger.info(f"[{request_id}] Mejor modelo: {comparison_results.get('experiment_info', {}).get('best_model')}")
+        
+        return ModelComparisonResponse(**comparison_results)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{request_id}] Error en entrenamiento multi-modelo: {e}")
+        raise HTTPException(status_code=500, detail=f"Error en entrenamiento: {str(e)}")
+
+
+# ========== ENDPOINTS DE PREDICCIÓN ==========
 
 @app.post("/predict/simple", response_model=PredictionResponse)
 async def predict_species_simple(
@@ -479,15 +783,12 @@ async def predict_species_complete(
         raise HTTPException(status_code=500, detail="Error ejecutando predicción")
 
 
-# También necesitamos actualizar execute_prediction para usar el orden correcto
 async def execute_prediction(features: PenguinFeaturesComplete, request_id: str, start_time: float) -> PredictionResponse:
     """
     Función helper que ejecuta la predicción actual del modelo.
 
-    ACTUALIZADA para usar el orden exacto de features que espera el modelo.
-    Según la metadata: ["bill_length_mm", "bill_depth_mm", "flipper_length_mm",
-    "body_mass_g", "year", "island_Biscoe", "island_Dream", "island_Torgersen",
-    "sex_female", "sex_male"]
+    ACTUALIZADA para usar el orden exacto de features que espera el modelo
+    y metadatos del sistema multi-modelo.
     """
     try:
         # Convertir características a array numpy en el ORDEN EXACTO del modelo
@@ -504,27 +805,36 @@ async def execute_prediction(features: PenguinFeaturesComplete, request_id: str,
             features.sex_male        # Nombre corregido
         ]])
 
-        # El resto de la función permanece igual...
+        # Aplicar escalado usando el mismo scaler del entrenamiento
         feature_array_scaled = cached_scaler.transform(feature_array)
+        
+        # Ejecutar predicción
         prediction = cached_model.predict(feature_array_scaled)[0]
         probabilities = cached_model.predict_proba(feature_array_scaled)[0]
-
+        
+        # Calcular confianza y crear diccionario de probabilidades
         confidence = float(max(probabilities))
         prob_dict = {
             "Adelie": float(probabilities[0]),
             "Chinstrap": float(probabilities[1]),
             "Gentoo": float(probabilities[2])
         }
-
+        
+        # Obtener nombre de especie
         species_name = get_species_name(int(prediction))
-        processing_time = (time.time() - start_time) * 1000
-
+        
+        # Calcular tiempo de procesamiento
+        processing_time = (time.time() - start_time) * 1000  # Convertir a milliseconds
+        
+        # Crear metadata de predicción (ACTUALIZADA para multi-modelo)
         prediction_metadata = {
             "processing_time_ms": round(processing_time, 2),
-            "model_version": cached_metadata.get("model_version", "unknown"),
-            "request_timestamp": datetime.now().isoformat()
+            "model_version": cached_metadata.get("model_info", {}).get("saved_timestamp", 
+                                                cached_metadata.get("registry_info", {}).get("last_updated", "unknown")),
+            "request_timestamp": datetime.now().isoformat(),
+            "active_model": model_manager.get_active_model_name() if model_manager else "unknown"
         }
-
+        
         return PredictionResponse(
             species=species_name,
             species_code=int(prediction),
@@ -532,7 +842,7 @@ async def execute_prediction(features: PenguinFeaturesComplete, request_id: str,
             probabilities=prob_dict,
             prediction_metadata=prediction_metadata
         )
-
+        
     except Exception as e:
         logger.error(f"[{request_id}] Error en execute_prediction: {e}")
         raise

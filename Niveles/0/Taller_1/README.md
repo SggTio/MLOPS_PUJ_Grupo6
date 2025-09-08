@@ -1,9 +1,13 @@
-README.md
-🐧 Taller — Desarrollo en Contenedores (API + Jupyter + uv + Compose)
+# Taller — Desarrollo en Contenedores (API + Jupyter + uv + Compose)
 
-Este proyecto expone una API FastAPI que clasifica especies de pingüinos (Palmer Penguins) y un entorno de JupyterLab para entrenar y guardar nuevos modelos. Ambos servicios comparten un volumen de modelos; así, cuando el notebook guarda un modelo nuevo, la API puede recargar esos artefactos sin reiniciar el contenedor.
+Este proyecto implementa una API desarrollada con FastAPI para clasificar especies de pingüinos (Palmer Penguins), junto con un entorno de JupyterLab que permite entrenar y guardar nuevos modelos. Ambos servicios comparten un volumen de almacenamiento, lo que permite que los modelos generados desde Jupyter se guarden en una ubicación común. Gracias a esto, la API puede recargar automáticamente los artefactos actualizados sin necesidad de reiniciar su contenedor.
 
-Arquitectura
+### Estructura de Archivos
+![Estructura de archivos del proyecto](./images/arquitectura.png)
+
+### Arquitectura del proyecto
+
+La estructura del proyecto se organizó de manera modular para facilitar el mantenimiento y escalabilidad:
 
 ```bash
 ┌────────────────┐        volumen compartido         ┌───────────────┐
@@ -18,7 +22,7 @@ JupyterLab: entrena y guarda logistic_regression_model.pkl, scaler.pkl, model_in
 
 API (FastAPI): sirve predicciones; puede recargar los artefactos con POST /model/reload sin reiniciar.
 
-📁 Estructura relevante
+### Estructura Relevante
 
 ```graphql
 .
@@ -37,7 +41,7 @@ API (FastAPI): sirve predicciones; puede recargar los artefactos con POST /model
 └── docker-compose.yml          # Orquestación: servicios + volumen compartido de modelos
 ```
 
-🔌 Endpoints principales
+### Endpoints principales
 
 GET / – info básica del servicio
 
@@ -56,7 +60,10 @@ POST /model/reload – recarga artefactos desde MODELS_DIR (volumen compartido)
 Swagger UI: http://localhost:8989/docs
 ReDoc: http://localhost:8989/redoc
 
-🧩 Variables de entorno relevantes
+### Funciones principales de los Endpoints
+"endpoints": {    "/predict/simple": "Predicción con entrada user-friendly",    "/predict/complete": "Predicción con one-hot encoding explícito",    "/health": "Estado detallado del servicio",    "/model/info": "Información sobre el modelo activo",    "/model/reload": "Recargar modelo activo",    "/models/list": "Listar todos los modelos disponibles",    "/models/activate/{model_name}": "Activar un modelo específico",    "/models/comparison": "Comparación detallada entre modelos",    "/models/train": "Entrenar múltiples modelos",    "/models/{model_name}": "Eliminar un modelo específico",    "/docs": "Documentación interactiva (Swagger UI)",    "/redoc": "Documentación alternativa (ReDoc)"
+
+### Variables de entorno relevantes
 
 MODELS_DIR
 
@@ -66,7 +73,7 @@ En Jupyter: /workspace/models
 
 Ambos apuntan al mismo volumen (model_store) para compartir artefactos.
 
-🛠️ Requisitos previos
+### Requisitos previos
 
 Docker Desktop en Windows con WSL2 backend habilitado.
 
@@ -78,7 +85,7 @@ Puertos libres:
 
 8888 para Jupyter
 
-🚀 Puesta en marcha
+### Puesta en marcha
 
 Desde la raíz del proyecto (donde está docker-compose.yml):
 
@@ -96,13 +103,10 @@ Abre Jupyter: http://localhost:8888
 
 Abre la API: http://localhost:8989/docs
 
-🧪 Flujos de prueba
+### Flujos de prueba
 1) Entrenar un modelo desde Jupyter
 
-En un notebook de Jupyter (p. ej. notebooks/train_penguins.ipynb), ejecuta:
-
-```python
-!python train_model.py
+!python train_model.py --> !python train_multi_models.py
 ```
 Esto:
 
@@ -111,17 +115,22 @@ Procesa datos → entrena → guarda artefactos en /workspace/models (volumen co
 Verifica artefactos:
 ```bash
 !ls -lh /workspace/models
+ 
+```Deberias ver: 
+ 
+-rwxr-xr-x 1 root root    7 Aug 25 03:56 active_model.txt
+-rwxr-xr-x 1 root root 745K Aug 25 03:42 gradient_boosting_model.pkl
+-rwxr-xr-x 1 root root 1.2K Aug 25 03:56 logistic_regression_model.pkl
+-rwxr-xr-x 1 root root 3.3K Aug 25 01:19 model_info.json
+-rwxr-xr-x 1 root root 7.7K Aug 25 03:56 models_comparison.json
+-rwxr-xr-x 1 root root  704 Aug 25 03:56 models_registry.json
+-rwxr-xr-x 1 root root 157K Aug 25 03:42 neural_network_model.pkl
+-rwxr-xr-x 1 root root 227K Aug 25 03:56 random_forest_model.pkl
+-rwxr-xr-x 1 root root 1.3K Aug 25 03:56 scaler.pkl
+-rwxr-xr-x 1 root root 9.3K Aug 25 03:56 svm_rbf_model.pkl
 
-```
-Deberías ver:
 
-```pgsql
-logistic_regression_model.pkl
-scaler.pkl
-model_info.json
-```
-
-🧑‍💻 Desarrollo con VS Code (WSL)
+### Desarrollo con VS code (WSL)
 
 Abre la carpeta del proyecto en VS Code (WSL).
 
@@ -135,7 +144,7 @@ docker compose build api && docker compose restart api
 docker compose build jupyter && docker compose restart jupyter
 
 ```
-🧯 Troubleshooting
+### Troubleshooting
 
 Jupyter se cierra con “Running as root is not recommended”: ya está mitigado con --allow-root en Compose.
 
@@ -149,18 +158,16 @@ kill -9 <PID>
 
 /model/reload no aparece: asegúrate de haber guardado cambios de api/main.py y que Uvicorn hizo reload (o reinicia el servicio API).
 
-🔮 Próximos pasos:
+### Despliegue de la solución
 
-Crear un notebook de entrenamiento (notebooks/train_penguins.ipynb) que:
+Verificación del funcionamiento: 
+![Estructura de archivos del proyecto](./images/api.png)
 
-Procese datos con src.data_processing.
 
-Entrene con src.model_training.
+Logs de funcionamiento API:
+![Estructura de archivos del proyecto](./images/logs.jpeg)
+![Estructura de archivos del proyecto](./images/logs2.png)
 
-Guarde artefactos con src.model_manager dentro del volumen compartido.
+Validación de los Endpoints de la API:
+![Estructura de archivos del proyecto](./images/API__Nivel0_Taller2.pdf)
 
-Desde ese notebook, hacer un POST a http://api:8989/model/reload (o http://localhost:8989 si prefieres) para recargar el modelo.
-
-Validar predicciones llamando a /predict/simple desde el notebook.
-
-Opcional: agregar celdas para explorar métricas del model_info.json.

@@ -1,0 +1,536 @@
+{
+  "experiment_info": {
+    "total_models_trained": 5,
+    "best_model": "svm_rbf",
+    "timestamp": "2025-08-24T22:29:54.022504",
+    "cv_folds": 5,
+    "test_size": 0.2,
+    "random_state": 42
+  },
+  "models_summary": {
+    "logistic_regression": {
+      "model_name": "logistic_regression",
+      "algorithm": "LogisticRegression",
+      "family": "linear",
+      "test_accuracy": 0.9850746268656716,
+      "cv_accuracy": 0.9962264150943396,
+      "cv_std": 0.007547169811320752,
+      "precision": 0.9777777777777779,
+      "recall": 0.9885057471264368,
+      "f1_score": 0.9826577939100626,
+      "training_time": 0.010311603546142578,
+      "confidence_mean": 0.9489261779442462,
+      "is_best": false
+    },
+    "random_forest": {
+      "model_name": "random_forest",
+      "algorithm": "RandomForestClassifier",
+      "family": "ensemble",
+      "test_accuracy": 1.0,
+      "cv_accuracy": 0.9849056603773585,
+      "cv_std": 0.03018867924528301,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "training_time": 0.1271040439605713,
+      "confidence_mean": 0.9393352709367634,
+      "is_best": false
+    },
+    "gradient_boosting": {
+      "model_name": "gradient_boosting",
+      "algorithm": "GradientBoostingClassifier",
+      "family": "ensemble",
+      "test_accuracy": 0.9850746268656716,
+      "cv_accuracy": 0.9886792452830189,
+      "cv_std": 0.02264150943396226,
+      "precision": 0.9777777777777779,
+      "recall": 0.9885057471264368,
+      "f1_score": 0.9826577939100626,
+      "training_time": 0.3497328758239746,
+      "confidence_mean": 0.9853483922637952,
+      "is_best": false
+    },
+    "svm_rbf": {
+      "model_name": "svm_rbf",
+      "algorithm": "SVC",
+      "family": "kernel",
+      "test_accuracy": 1.0,
+      "cv_accuracy": 0.9962264150943396,
+      "cv_std": 0.007547169811320752,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "training_time": 0.0061244964599609375,
+      "confidence_mean": 0.9726201245307742,
+      "is_best": true
+    },
+    "neural_network": {
+      "model_name": "neural_network",
+      "algorithm": "MLPClassifier",
+      "family": "neural",
+      "test_accuracy": 0.9701492537313433,
+      "cv_accuracy": 0.9172606568832984,
+      "cv_std": 0.019358984939840607,
+      "precision": 0.978494623655914,
+      "recall": 0.9523809523809524,
+      "f1_score": 0.9632478632478634,
+      "training_time": 0.04140186309814453,
+      "confidence_mean": 0.6598776520914758,
+      "is_best": false
+    }
+  },
+  "ranking": [
+    {
+      "rank": 1,
+      "model": "random_forest",
+      "accuracy": 1.0
+    },
+    {
+      "rank": 2,
+      "model": "svm_rbf",
+      "accuracy": 1.0
+    },
+    {
+      "rank": 3,
+      "model": "logistic_regression",
+      "accuracy": 0.9850746268656716
+    },
+    {
+      "rank": 4,
+      "model": "gradient_boosting",
+      "accuracy": 0.9850746268656716
+    },
+    {
+      "rank": 5,
+      "model": "neural_network",
+      "accuracy": 0.9701492537313433
+    }
+  ],
+  "detailed_metrics": {
+    "logistic_regression": {
+      "model_name": "logistic_regression",
+      "training_time_seconds": 0.010311603546142578,
+      "accuracy": {
+        "train": 1.0,
+        "test": 0.9850746268656716,
+        "cv_mean": 0.9962264150943396,
+        "cv_std": 0.007547169811320752
+      },
+      "precision_macro": 0.9777777777777779,
+      "recall_macro": 0.9885057471264368,
+      "f1_score_macro": 0.9826577939100626,
+      "confusion_matrix": [
+        [
+          28,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          14
+        ]
+      ],
+      "classification_report": {
+        "1": {
+          "precision": 1.0,
+          "recall": 0.9655172413793104,
+          "f1-score": 0.9824561403508771,
+          "support": 29.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 24.0
+        },
+        "3": {
+          "precision": 0.9333333333333333,
+          "recall": 1.0,
+          "f1-score": 0.9655172413793104,
+          "support": 14.0
+        },
+        "accuracy": 0.9850746268656716,
+        "macro avg": {
+          "precision": 0.9777777777777779,
+          "recall": 0.9885057471264368,
+          "f1-score": 0.9826577939100626,
+          "support": 67.0
+        },
+        "weighted avg": {
+          "precision": 0.9860696517412935,
+          "recall": 0.9850746268656716,
+          "f1-score": 0.9852010365594893,
+          "support": 67.0
+        }
+      },
+      "confidence_stats": {
+        "mean": 0.9489261779442462,
+        "std": 0.078071455641882,
+        "min": 0.5003143377802729,
+        "max": 0.9984337569943651
+      },
+      "cross_validation": {
+        "scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9811320754716981,
+          1.0
+        ],
+        "mean": 0.9962264150943396,
+        "std": 0.007547169811320752
+      },
+      "config": {
+        "description": "Regresión Logística - Algoritmo lineal rápido y interpretable",
+        "family": "linear",
+        "algorithm": "LogisticRegression"
+      }
+    },
+    "random_forest": {
+      "model_name": "random_forest",
+      "training_time_seconds": 0.1271040439605713,
+      "accuracy": {
+        "train": 0.9962406015037594,
+        "test": 1.0,
+        "cv_mean": 0.9849056603773585,
+        "cv_std": 0.03018867924528301
+      },
+      "precision_macro": 1.0,
+      "recall_macro": 1.0,
+      "f1_score_macro": 1.0,
+      "confusion_matrix": [
+        [
+          29,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          14
+        ]
+      ],
+      "classification_report": {
+        "1": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 29.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 24.0
+        },
+        "3": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 14.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 67.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 67.0
+        }
+      },
+      "confidence_stats": {
+        "mean": 0.9393352709367634,
+        "std": 0.09571258875133133,
+        "min": 0.5697301587301586,
+        "max": 1.0
+      },
+      "cross_validation": {
+        "scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9245283018867925,
+          1.0
+        ],
+        "mean": 0.9849056603773585,
+        "std": 0.03018867924528301
+      },
+      "config": {
+        "description": "Random Forest - Ensemble robusto con alta precisión",
+        "family": "ensemble",
+        "algorithm": "RandomForestClassifier"
+      }
+    },
+    "gradient_boosting": {
+      "model_name": "gradient_boosting",
+      "training_time_seconds": 0.3497328758239746,
+      "accuracy": {
+        "train": 1.0,
+        "test": 0.9850746268656716,
+        "cv_mean": 0.9886792452830189,
+        "cv_std": 0.02264150943396226
+      },
+      "precision_macro": 0.9777777777777779,
+      "recall_macro": 0.9885057471264368,
+      "f1_score_macro": 0.9826577939100626,
+      "confusion_matrix": [
+        [
+          28,
+          0,
+          1
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          14
+        ]
+      ],
+      "classification_report": {
+        "1": {
+          "precision": 1.0,
+          "recall": 0.9655172413793104,
+          "f1-score": 0.9824561403508771,
+          "support": 29.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 24.0
+        },
+        "3": {
+          "precision": 0.9333333333333333,
+          "recall": 1.0,
+          "f1-score": 0.9655172413793104,
+          "support": 14.0
+        },
+        "accuracy": 0.9850746268656716,
+        "macro avg": {
+          "precision": 0.9777777777777779,
+          "recall": 0.9885057471264368,
+          "f1-score": 0.9826577939100626,
+          "support": 67.0
+        },
+        "weighted avg": {
+          "precision": 0.9860696517412935,
+          "recall": 0.9850746268656716,
+          "f1-score": 0.9852010365594893,
+          "support": 67.0
+        }
+      },
+      "confidence_stats": {
+        "mean": 0.9853483922637952,
+        "std": 0.07275639931626744,
+        "min": 0.5476135435654411,
+        "max": 0.9999990159107616
+      },
+      "cross_validation": {
+        "scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9433962264150944,
+          1.0
+        ],
+        "mean": 0.9886792452830189,
+        "std": 0.02264150943396226
+      },
+      "config": {
+        "description": "Gradient Boosting - Ensemble secuencial de alta performance",
+        "family": "ensemble",
+        "algorithm": "GradientBoostingClassifier"
+      }
+    },
+    "svm_rbf": {
+      "model_name": "svm_rbf",
+      "training_time_seconds": 0.0061244964599609375,
+      "accuracy": {
+        "train": 0.9962406015037594,
+        "test": 1.0,
+        "cv_mean": 0.9962264150943396,
+        "cv_std": 0.007547169811320752
+      },
+      "precision_macro": 1.0,
+      "recall_macro": 1.0,
+      "f1_score_macro": 1.0,
+      "confusion_matrix": [
+        [
+          29,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          0,
+          0,
+          14
+        ]
+      ],
+      "classification_report": {
+        "1": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 29.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 24.0
+        },
+        "3": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 14.0
+        },
+        "accuracy": 1.0,
+        "macro avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 67.0
+        },
+        "weighted avg": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 67.0
+        }
+      },
+      "confidence_stats": {
+        "mean": 0.9726201245307742,
+        "std": 0.06607207475245544,
+        "min": 0.5347382231532357,
+        "max": 0.9970435918174044
+      },
+      "cross_validation": {
+        "scores": [
+          1.0,
+          1.0,
+          1.0,
+          0.9811320754716981,
+          1.0
+        ],
+        "mean": 0.9962264150943396,
+        "std": 0.007547169811320752
+      },
+      "config": {
+        "description": "SVM con kernel RBF - Clasificador de márgenes máximos",
+        "family": "kernel",
+        "algorithm": "SVC"
+      }
+    },
+    "neural_network": {
+      "model_name": "neural_network",
+      "training_time_seconds": 0.04140186309814453,
+      "accuracy": {
+        "train": 0.9511278195488722,
+        "test": 0.9701492537313433,
+        "cv_mean": 0.9172606568832984,
+        "cv_std": 0.019358984939840607
+      },
+      "precision_macro": 0.978494623655914,
+      "recall_macro": 0.9523809523809524,
+      "f1_score_macro": 0.9632478632478634,
+      "confusion_matrix": [
+        [
+          29,
+          0,
+          0
+        ],
+        [
+          0,
+          24,
+          0
+        ],
+        [
+          2,
+          0,
+          12
+        ]
+      ],
+      "classification_report": {
+        "1": {
+          "precision": 0.9354838709677419,
+          "recall": 1.0,
+          "f1-score": 0.9666666666666667,
+          "support": 29.0
+        },
+        "2": {
+          "precision": 1.0,
+          "recall": 1.0,
+          "f1-score": 1.0,
+          "support": 24.0
+        },
+        "3": {
+          "precision": 1.0,
+          "recall": 0.8571428571428571,
+          "f1-score": 0.9230769230769231,
+          "support": 14.0
+        },
+        "accuracy": 0.9701492537313433,
+        "macro avg": {
+          "precision": 0.978494623655914,
+          "recall": 0.9523809523809524,
+          "f1-score": 0.9632478632478634,
+          "support": 67.0
+        },
+        "weighted avg": {
+          "precision": 0.9720751083293211,
+          "recall": 0.9701492537313433,
+          "f1-score": 0.9694986605434366,
+          "support": 67.0
+        }
+      },
+      "confidence_stats": {
+        "mean": 0.6598776520914758,
+        "std": 0.12550441680014424,
+        "min": 0.4104005710999987,
+        "max": 0.8914299044016251
+      },
+      "cross_validation": {
+        "scores": [
+          0.9259259259259259,
+          0.8867924528301887,
+          0.9433962264150944,
+          0.9245283018867925,
+          0.9056603773584906
+        ],
+        "mean": 0.9172606568832984,
+        "std": 0.019358984939840607
+      },
+      "config": {
+        "description": "Red Neural (MLP) - Aprendizaje no lineal profundo",
+        "family": "neural",
+        "algorithm": "MLPClassifier"
+      }
+    }
+  }
+}

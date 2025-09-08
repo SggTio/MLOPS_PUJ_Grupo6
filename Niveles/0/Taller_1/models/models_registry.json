@@ -1,0 +1,37 @@
+{
+  "models": {
+    "logistic_regression": {
+      "filename": "logistic_regression_model.pkl",
+      "algorithm": "LogisticRegression",
+      "saved_timestamp": "2025-08-24T22:29:54.022504",
+      "file_size_kb": 1.13
+    },
+    "random_forest": {
+      "filename": "random_forest_model.pkl",
+      "algorithm": "RandomForestClassifier",
+      "saved_timestamp": "2025-08-24T22:29:54.041915",
+      "file_size_kb": 226.86
+    },
+    "gradient_boosting": {
+      "filename": "gradient_boosting_model.pkl",
+      "algorithm": "GradientBoostingClassifier",
+      "saved_timestamp": "2025-08-24T22:29:54.052299",
+      "file_size_kb": 744.43
+    },
+    "svm_rbf": {
+      "filename": "svm_rbf_model.pkl",
+      "algorithm": "SVC",
+      "saved_timestamp": "2025-08-24T22:29:54.054047",
+      "file_size_kb": 9.33
+    },
+    "neural_network": {
+      "filename": "neural_network_model.pkl",
+      "algorithm": "MLPClassifier",
+      "saved_timestamp": "2025-08-24T22:29:54.056556",
+      "file_size_kb": 156.05
+    }
+  },
+  "scaler_file": "scaler.pkl",
+  "last_updated": "2025-08-24T22:29:54.056556",
+  "total_models": 5
+}

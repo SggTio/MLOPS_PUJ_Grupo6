@@ -70,11 +70,24 @@ load_raw: carga el dataset sin procesar.
 preprocess: limpia y transforma los datos, guarda resultado en MySQL y exporta el preprocesador.
 train_model: entrena un modelo de clasificación, guarda métricas y modelo entrenado.
 Los resultados y artefactos (modelo, preprocesador, métricas) se almacenan en el volumen artifacts.
+
+### Resultados de Airflow
+![Dag](Niveles/2/Taller_2/images/airflow.png)
+
+![Definición de las tareas](Niveles/2/Taller_2/images/airflow-2.png)
+
+
 ## 7. API de inferencia con FastAPI
 El servicio API se levanta con:
  docker compose up -d api
  Verificar estado de la API
  curl http://localhost:8000/health
+
+### Levantar la API
+![API](Niveles/2/Taller_2/images/prediccion-1.png) 
+
+![API](Niveles/2/Taller_2/images/prediccion-1.png) 
+
 
 Respuesta esperada (JSON):
 {"status": "ok", "preprocessor": true, "model": true}
